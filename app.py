@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+from main import *
 from datetime import datetime
 
 import requests
@@ -40,7 +41,7 @@ def webhook():
                     recipient_id = messaging_event["recipient"]["id"]  # the recipient's ID, which should be your page's facebook ID
                     message_text = messaging_event["message"]["text"]  # the message's text
 
-                    send_message(sender_id, "roger that!")
+                    send_message(sender_id, message_text)
 
                 if messaging_event.get("delivery"):  # delivery confirmation
                     pass
@@ -54,9 +55,11 @@ def webhook():
     return "ok", 200
 
 
-def send_message(recipient_id, message_text):
+def send_message(recipient_id, user_message):
 
-    log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message_text))
+    lucene_response = get_lucene_response(user_query=user_message) #Get a response from lucene
+
+    log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=lucene_response))
 
     params = {
         "access_token": os.environ["PAGE_ACCESS_TOKEN"]
@@ -69,7 +72,7 @@ def send_message(recipient_id, message_text):
             "id": recipient_id
         },
         "message": {
-            "text": message_text
+            "text": lucene_response
         }
     })
     r = requests.post("https://graph.facebook.com/v2.6/me/messages", params=params, headers=headers, data=data)
