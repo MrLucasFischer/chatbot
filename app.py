@@ -58,6 +58,7 @@ def webhook():
 def send_message(recipient_id, user_message):
 
     lucene_response = get_lucene_response(user_query=user_message) #Get a response from lucene
+    log("MESSAGE FROM LUCENE: "+lucene_response)
 
     log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=lucene_response))
 
