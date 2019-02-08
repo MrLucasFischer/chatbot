@@ -24,7 +24,6 @@ def verify():
 
 @app.route('/', methods=['POST'])
 def webhook():
-
     # endpoint for processing incoming messaging events
 
     data = request.get_json()
@@ -37,11 +36,20 @@ def webhook():
 
                 if messaging_event.get("message"):  # someone sent us a message
 
-                    sender_id = messaging_event["sender"]["id"]        # the facebook ID of the person sending you the message
-                    recipient_id = messaging_event["recipient"]["id"]  # the recipient's ID, which should be your page's facebook ID
-                    message_text = messaging_event["message"]["text"]  # the message's text
+                    sender_id = messaging_event["sender"]["id"]  # the facebook ID of the person sending you the message
+                    recipient_id = messaging_event["recipient"][
+                        "id"]  # the recipient's ID, which should be your page's facebook ID
 
-                    send_message(sender_id, message_text)
+                    if messaging_event["message"].get('text'):
+                        message_text = messaging_event["message"]["text"]  # the message's text
+
+                        lucene_response = get_lucene_response(user_query=message_text)  # Get a response from lucene
+
+                        bert_response = bert_rerank(message_text, lucene_response)
+                        send_message(sender_id, bert_response)
+
+                    else:
+                        send_message(sender_id, "I'm still learning how to see.")
 
                 if messaging_event.get("delivery"):  # delivery confirmation
                     pass
@@ -55,14 +63,8 @@ def webhook():
     return "ok", 200
 
 
-def send_message(recipient_id, user_message):
-
-    lucene_response = get_lucene_response(user_query=user_message) #Get a response from lucene
-    # log("MESSAGE FROM LUCENE: "+lucene_response)
-
-    bert_response = bert_rerank(user_message, lucene_response)
-
-    # log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=bert_response))
+def send_message(recipient_id, message):
+    log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message))
 
     params = {
         "access_token": os.environ["PAGE_ACCESS_TOKEN"]
@@ -75,7 +77,7 @@ def send_message(recipient_id, user_message):
             "id": recipient_id
         },
         "message": {
-            "text": bert_response
+            "text": message
         }
     })
     r = requests.post("https://graph.facebook.com/v2.6/me/messages", params=params, headers=headers, data=data)
