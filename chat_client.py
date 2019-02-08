@@ -1,8 +1,11 @@
 import requests
+import numpy as np
 from flask import Flask, request
+from sklearn.metrics.pairwise import cosine_similarity
 
 session = requests.session()
 app = Flask(__name__)
+BERT_HTTP = 'http://api.novasearch.org/bert/v1/encode'
 
 
 def get_flicker_photo(user_query, server_response):
@@ -49,7 +52,19 @@ def get_lucene_response(user_query):
         "b": 0.45,
         "q": user_query
     })
-    return r.text
+    return r.json()
+
+
+def bert_rerank(query, candidate_answers):
+    texts = [query] + candidate_answers
+    payload = {'id': 0, 'texts': texts, 'is_tokenized': False}
+    r = session.post(BERT_HTTP, json=payload)
+
+    response = r.json()
+    result = np.array(response['result'])
+
+    # add 1 to argmax since the question was excluded
+    return texts[1 + np.argmax(cosine_similarity(result[0:1, :], result[1:, :]))]
 
 
 def main():
@@ -57,5 +72,3 @@ def main():
         query = input("Insert you're query :")
         lucene_response = get_lucene_response(query)
         get_flicker_photo(query, lucene_response)
-
-main()

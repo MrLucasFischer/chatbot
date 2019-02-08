@@ -60,7 +60,9 @@ def send_message(recipient_id, user_message):
     lucene_response = get_lucene_response(user_query=user_message) #Get a response from lucene
     log("MESSAGE FROM LUCENE: "+lucene_response)
 
-    log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=lucene_response))
+    bert_response = bert_rerank(user_message, lucene_response)
+
+    log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=bert_response))
 
     params = {
         "access_token": os.environ["PAGE_ACCESS_TOKEN"]
@@ -73,7 +75,7 @@ def send_message(recipient_id, user_message):
             "id": recipient_id
         },
         "message": {
-            "text": lucene_response
+            "text": bert_response
         }
     })
     r = requests.post("https://graph.facebook.com/v2.6/me/messages", params=params, headers=headers, data=data)
