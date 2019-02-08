@@ -58,6 +58,4 @@ def main():
         lucene_response = get_lucene_response(query)
         get_flicker_photo(query, lucene_response)
 
-
-if __name__ == '__main__':
-    main()
+main()

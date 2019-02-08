@@ -1,7 +1,7 @@
 import os
 import sys
 import json
-from main import *
+from chat_client import *
 from datetime import datetime
 
 import requests
